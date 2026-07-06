@@ -1,0 +1,75 @@
+# configs/base.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# Configuration de référence NeuroTrade.
+# Tous les paramètres sont exposés ici ; les fichiers d'override par marché
+# (btc_1min.yaml, eth_1min.yaml…) ne redéfinissent que ce qui change.
+# ─────────────────────────────────────────────────────────────────────────────
+
+meta:
+  version: "0.1.0"
+  seed: 42                       # Seed global (numpy + random + torch)
+  run_name: "baseline"           # Identifiant du run dans les rapports
+
+data:
+  exchange: "binance"            # Source ccxt ("binance", "kraken"…)
+  symbol: "BTC/USDT"
+  timeframe: "1m"                # Timeframe OHLCV
+  start: "2023-01-01"
+  end: "2024-12-31"
+  cache_dir: "data/"             # Répertoire du cache parquet (créé automatiquement)
+  max_gap_bars: 5                # Nb max de bougies manquantes tolérées
+  timezone: "UTC"
+
+features:
+  horizons: [1, 5, 15, 60]      # Horizons log-returns (en nombre de bougies)
+  vol_window: 20                 # Fenêtre volatilité réalisée (bougies)
+  momentum_window: 30            # Fenêtre z-score de momentum (bougies)
+  use_volume: true               # Activer les features volume/spread
+  max_features: 10               # Garde-fou : erreur si le pipeline dépasse 10 features
+
+labeling:
+  tp_pct: 0.002                  # Take-profit : +0.2 %
+  sl_pct: 0.001                  # Stop-loss   : -0.1 %
+  horizon_bars: 60               # Horizon max (bougies) avant expiration neutre
+  min_ret_to_trade: 0.0005       # Seuil : edge prédit doit dépasser coûts + cette marge
+
+model:
+  arch: "mlp"                    # Architecture : "mlp" | "cnn1d" | "lstm"
+  hidden_dims: [64, 32]          # Couches cachées MLP (ignoré pour cnn1d/lstm)
+  dropout: 0.3
+  weight_decay: 0.0001           # Régularisation L2
+  lr: 0.001
+  batch_size: 256
+  max_epochs: 100
+  patience: 10                   # Early stopping : arrêt si val_loss ne descend plus
+
+backtest:
+  # Fenêtre d'entraînement : ici ~15 jours de bougies 1 min
+  train_window_bars: 21600
+  # Pas de glissement : 1 jour
+  step_bars: 1440
+  # Part de la fenêtre train réservée à la validation in-sample
+  val_ratio: 0.2
+  # Purge : supprime les étiquettes qui chevauchent la frontière train/val
+  # Doit être >= horizon_bars pour éviter toute fuite de label
+  purge_bars: 60
+  # Embargo : ignore les bougies juste après la fin de val (décalage d'exécution)
+  embargo_bars: 10
+
+execution:
+  fee_maker: 0.0002              # 0.02 % maker (ordre à cours limité)
+  fee_taker: 0.0004              # 0.04 % taker (ordre au marché)
+  slippage_bps: 1.0              # Slippage paramétrique en points de base
+  funding_rate_8h: 0.0001        # Taux de funding toutes les 8 h (contrats perpétuels)
+  latency_bars: 1                # Délai d'exécution : ordre passé sur la bougie suivante
+
+risk:
+  max_position_pct: 0.02         # Taille max de position (% du capital)
+  daily_stop_pct: 0.01           # Coupe-circuit journalier : -1 % du capital
+  vol_zscore_threshold: 3.0      # Kill-switch : vol > μ + 3σ → flat + pause
+  spread_zscore_threshold: 4.0   # Kill-switch : spread anormal → flat + pause
+
+evaluation:
+  report_dir: "reports/"
+  min_trades: 30                 # Nb min de trades pour que les métriques soient valides
+  risk_free_rate: 0.04           # Taux sans risque annualisé (pour Sharpe / DSR)

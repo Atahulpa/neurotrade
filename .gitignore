@@ -1,0 +1,45 @@
+# Environnement Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# uv
+.python-version
+
+# Données (cache parquet — ne pas versionner)
+data/*.parquet
+data/*.arrow
+data/*/
+
+# Rapports générés
+reports/
+
+# Artefacts ML
+*.pt
+*.pth
+checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+
+# Secrets (jamais versionner)
+.env
+*.key

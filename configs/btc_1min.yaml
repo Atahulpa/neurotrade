@@ -1,0 +1,10 @@
+# configs/btc_1min.yaml — Override BTC/USDT 1 min
+# Hérite de base.yaml (le loader fusionne les deux).
+meta:
+  run_name: "btc_1min"
+
+data:
+  symbol: "BTC/USDT"
+  timeframe: "1m"
+  start: "2023-01-01"
+  end: "2024-12-31"
